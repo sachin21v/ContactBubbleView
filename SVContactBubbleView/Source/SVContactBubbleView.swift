@@ -135,7 +135,6 @@ open class SVContactBubbleView: UIView
         self.textfield.delegate = self
         self.textfield.isScrollEnabled = false
         self.textfield.returnKeyType = UIReturnKeyType.done
-        self
         self.textfield.autocorrectionType = UITextAutocorrectionType.no
         
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false

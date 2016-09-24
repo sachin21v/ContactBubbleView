@@ -30,10 +30,10 @@ class SVViewController: UIViewController
     {
         super.viewDidLoad()
     
-        if let path = NSBundle.mainBundle().pathForResource("Suggestion", ofType: "json")
+        if let path = Bundle.main.path(forResource: "Suggestion", ofType: "json")
         {
             
-            let cityJsonArray = try! NSJSONSerialization.JSONObjectWithData(NSData(contentsOfFile: path)!, options: NSJSONReadingOptions()) as? [AnyObject]
+            let cityJsonArray = try! JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: path)), options: JSONSerialization.ReadingOptions()) as? [AnyObject]
             for city in cityJsonArray! {
                 let cityToAdd = SVCity(fromDictionary: city as! [String : String])
                 cityArray.append(cityToAdd)
@@ -49,7 +49,7 @@ class SVViewController: UIViewController
         
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
         contactBubbleView.reloadData()
@@ -64,12 +64,12 @@ class SVViewController: UIViewController
 extension SVViewController: SVContactBubbleDataSource
 {
     
-    func insetsForContactBubbleView(contactBubbleView: SVContactBubbleView) -> UIEdgeInsets?
+    func insetsForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> UIEdgeInsets?
     {
         return UIEdgeInsetsMake(5, 5, 5, 5)
     }
     
-    func placeholderTextForContactBubbleView(contactBubbleView: SVContactBubbleView) -> String?
+    func placeholderTextForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> String?
     {
         if selectedCityArray.count > 0
         {
@@ -82,12 +82,12 @@ extension SVViewController: SVContactBubbleDataSource
         
     }
     
-    func numberOfContactBubbleForContactBubbleView(contactBubbleView: SVContactBubbleView) -> Int
+    func numberOfContactBubbleForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> Int
     {
         return selectedCityArray.count
     }
     
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, viewForContactBubbleAtIndex index: Int) -> UIView?
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, viewForContactBubbleAtIndex index: Int) -> UIView?
     {
         let city = selectedCityArray[index]
         if let name = city.name
@@ -105,24 +105,24 @@ extension SVViewController: SVContactBubbleDataSource
 
 extension SVViewController: SVContactBubbleDelegate
 {
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didDeleteBubbleWithTitle title: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didDeleteBubbleWithTitle title: String)
     {
         let searchedArray = selectedCityArray.filter { (city: SVCity) -> Bool in
-            return city.name.rangeOfString(title, options: .CaseInsensitiveSearch) != nil
+            return city.name.range(of: title, options: .caseInsensitive) != nil
         }
         
         if let found = searchedArray.first
         {
-            selectedCityArray.removeAtIndex(selectedCityArray.indexOf(found)!)
+            selectedCityArray.remove(at: selectedCityArray.index(of: found)!)
             contactBubbleView.reloadData()
         }
         
     }
     
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didChangeText text: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didChangeText text: String)
     {
         let searchedArray = cityArray.filter { (city: SVCity) -> Bool in
-            return city.name.rangeOfString(text, options: .CaseInsensitiveSearch) != nil
+            return city.name.range(of: text, options: .caseInsensitive) != nil
         }
         
         self.searchedCityArray = searchedArray
@@ -134,15 +134,17 @@ extension SVViewController: SVContactBubbleDelegate
     }
     
     
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, contentSizeChanged size: CGSize)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, contentSizeChanged size: CGSize)
     {
         self.contactBubbleViewHeightConstraint.constant = max(self.contactBubbleViewMinHeight,min(size.height, self.contactBubbleViewMaxHeight))
         self.view.layoutIfNeeded()
     }
     
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didFinishBubbleWithText text: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didFinishBubbleWithText text: String)
     {
-        
+        // On press of done button of keyborad
+        // To do whatever action you want to perform
+        self.view.endEditing(true)
     }
     
 }
@@ -152,17 +154,17 @@ extension SVViewController: SVContactBubbleDelegate
 extension SVViewController:UITableViewDelegate
 {
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
     {
         return UITableViewAutomaticDimension
     }
     
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-        let city = searchedCityArray[indexPath.row]
+        let city = searchedCityArray[(indexPath as NSIndexPath).row]
         if selectedCityArray.contains(city) {
-            selectedCityArray.removeAtIndex(selectedCityArray.indexOf(city)!)
+            selectedCityArray.remove(at: selectedCityArray.index(of: city)!)
         }
         else {
             
@@ -183,28 +185,28 @@ extension SVViewController:UITableViewDelegate
 extension SVViewController:UITableViewDataSource
 {
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
         return searchedCityArray.count
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
         
-        let cell:UITableViewCell = tableView.dequeueReusableCellWithIdentifier("SuggestionCell")!
+        let cell:UITableViewCell = tableView.dequeueReusableCell(withIdentifier: "SuggestionCell")!
         
-        let city = searchedCityArray[indexPath.row]
+        let city = searchedCityArray[(indexPath as NSIndexPath).row]
         if let name = city.name
         {
             cell.textLabel?.text = name
         }
         
         if selectedCityArray.contains(city) {
-            cell.accessoryType = .Checkmark
+            cell.accessoryType = .checkmark
         }
         else {
             
-            cell.accessoryType = .None
+            cell.accessoryType = .none
         }
         return cell
     }

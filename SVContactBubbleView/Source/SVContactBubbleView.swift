@@ -19,26 +19,27 @@ let  doneKey = "\n"
 public protocol SVContactBubbleDataSource
 {
 
-    func insetsForContactBubbleView(contactBubbleView: SVContactBubbleView) -> UIEdgeInsets?
-    func placeholderTextForContactBubbleView(contactBubbleView: SVContactBubbleView) -> String?
-    func numberOfContactBubbleForContactBubbleView(contactBubbleView: SVContactBubbleView) -> Int
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, viewForContactBubbleAtIndex index: Int) -> UIView?
+    func insetsForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> UIEdgeInsets?
+    func placeholderTextForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> String?
+    func numberOfContactBubbleForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> Int
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, viewForContactBubbleAtIndex index: Int) -> UIView?
 }
 
 
 public protocol SVContactBubbleDelegate
 {
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didDeleteBubbleWithTitle title: String)
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didFinishBubbleWithText text: String)
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, didChangeText text: String)
-    func contactBubbleView(contactBubbleView: SVContactBubbleView, contentSizeChanged size: CGSize)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didDeleteBubbleWithTitle title: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didFinishBubbleWithText text: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didChangeText text: String)
+    func contactBubbleView(_ contactBubbleView: SVContactBubbleView, contentSizeChanged size: CGSize)
 }
 
 // MARK: -UITextFieldDelegate
 
 extension SVContactBubbleView: UITextViewDelegate
 {
-    public func textView(textView: UITextView, shouldChangeTextInRange range: NSRange, replacementText text: String) -> Bool
+    
+    public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool
     {
         if text == doneKey {
             
@@ -51,7 +52,7 @@ extension SVContactBubbleView: UITextViewDelegate
             if let bubble = self.selectedBubble {
                 
                 bubble.removeFromSuperview()
-                self.contactBubbbles.removeAtIndex(self.contactBubbbles.indexOf(bubble)!)
+                self.contactBubbbles.remove(at: self.contactBubbbles.index(of: bubble)!)
                 self.delegate?.contactBubbleView(self, didDeleteBubbleWithTitle: bubble.titleLabel.text!)
                 self.selectedBubble = nil
             }
@@ -66,14 +67,14 @@ extension SVContactBubbleView: UITextViewDelegate
         else if text == deleteKey {
             
             let string: String = textfield.text!
-            let truncatedString = string.substringToIndex(string.endIndex.predecessor())
+            let truncatedString = string.substring(to: string.characters.index(before: string.endIndex))
             self.updatePlaceholderText(truncatedString)
             self.delegate?.contactBubbleView(self, didChangeText: truncatedString)
             return true
         }
         
         var string: String = textfield.text!
-        string.appendContentsOf(text)
+        string.append(text)
         self.updatePlaceholderText(string)
         self.delegate?.contactBubbleView(self, didChangeText: string)
         return true
@@ -82,18 +83,18 @@ extension SVContactBubbleView: UITextViewDelegate
 
 
 
-public class SVContactBubbleView: UIView
+open class SVContactBubbleView: UIView
 {
     
-    @IBInspectable public var dataSource: SVContactBubbleDataSource?
-    @IBInspectable public var delegate: SVContactBubbleDelegate?
+    @IBInspectable open var dataSource: SVContactBubbleDataSource?
+    @IBInspectable open var delegate: SVContactBubbleDelegate?
     
-    private var scrollView: UIScrollView = UIScrollView()
-    private var textfield: UITextView = UITextView()
-    private var placeholderLabel: UILabel = UILabel()
-    private var contactBubbbles: [SVContactBubble] = []
-    private var contactBubbleInsets: UIEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) // Default
-    private var lastText = ""
+    fileprivate var scrollView: UIScrollView = UIScrollView()
+    fileprivate var textfield: UITextView = UITextView()
+    fileprivate var placeholderLabel: UILabel = UILabel()
+    fileprivate var contactBubbbles: [SVContactBubble] = []
+    fileprivate var contactBubbleInsets: UIEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) // Default
+    fileprivate var lastText = ""
     
     // MARK: Constants
     var totalBubbles: Int = 0
@@ -101,44 +102,45 @@ public class SVContactBubbleView: UIView
     var textFieldMinimumWidth: CGFloat = 80.0
     var textFieldHeight: CGFloat = 30.0
     
-    private var selectedBubble: SVContactBubble? {
+    fileprivate var selectedBubble: SVContactBubble? {
         didSet{
             if let bubble = self.selectedBubble {
-                bubble.backgroundColor = UIColor.lightGrayColor()
+                bubble.backgroundColor = UIColor.lightGray
             }
         }
     }
     
     @IBInspectable var contactBubbleViewBorderColor = UIColor(red: 0.0, green: 0.45, blue: 0.94, alpha: 1.0) {
         didSet {
-            self.layer.borderColor = self.contactBubbleViewBorderColor.CGColor
+            self.layer.borderColor = self.contactBubbleViewBorderColor.cgColor
         }
     }
     
     
 
-    override public func awakeFromNib()
+    override open func awakeFromNib()
     {
         super.awakeFromNib()
         
-        self.scrollView.backgroundColor = UIColor.clearColor()
+        self.scrollView.backgroundColor = UIColor.clear
         self.scrollView.autoresizesSubviews = false
         self.addSubview(self.scrollView)
         
-        self.placeholderLabel.backgroundColor = UIColor.clearColor()
-        self.placeholderLabel.textColor = UIColor.lightGrayColor()
+        self.placeholderLabel.backgroundColor = UIColor.clear
+        self.placeholderLabel.textColor = UIColor.lightGray
         
-        self.textfield.backgroundColor = UIColor.clearColor()
-        self.textfield.textColor = UIColor.blackColor()
-        self.textfield.font = UIFont.systemFontOfSize(16)
+        self.textfield.backgroundColor = UIColor.clear
+        self.textfield.textColor = UIColor.black
+        self.textfield.font = UIFont.systemFont(ofSize: 16)
         self.textfield.delegate = self
-        self.textfield.scrollEnabled = false
-        self.textfield.returnKeyType = UIReturnKeyType.Done
-        self.textfield.autocorrectionType = UITextAutocorrectionType.No
+        self.textfield.isScrollEnabled = false
+        self.textfield.returnKeyType = UIReturnKeyType.done
+        self
+        self.textfield.autocorrectionType = UITextAutocorrectionType.no
         
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
-        self.addConstraints(NSLayoutConstraint.constraintsWithVisualFormat("H:|-0-[scrollView]-0-|", options: NSLayoutFormatOptions.DirectionLeadingToTrailing, metrics: nil, views: ["scrollView":scrollView]))
-        self.addConstraints(NSLayoutConstraint.constraintsWithVisualFormat("V:|-0-[scrollView]-0-|", options: NSLayoutFormatOptions.DirectionLeadingToTrailing, metrics: nil, views: ["scrollView":scrollView]))
+        self.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-0-[scrollView]-0-|", options: NSLayoutFormatOptions(), metrics: nil, views: ["scrollView":scrollView]))
+        self.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-0-[scrollView]-0-|", options: NSLayoutFormatOptions(), metrics: nil, views: ["scrollView":scrollView]))
         
         self.layoutIfNeeded()
     
@@ -174,11 +176,11 @@ public class SVContactBubbleView: UIView
         {
             if let contactBubble = dataSource?.contactBubbleView(self, viewForContactBubbleAtIndex: index) as? SVContactBubble
             {
-                contactBubble.actionClosure = {(bubble: SVContactBubble) in [self]
+                contactBubble.actionClosure = {[weak self](bubble: SVContactBubble) in
                     
                     bubble.removeFromSuperview()
-                    self.contactBubbbles.removeAtIndex(self.contactBubbbles.indexOf(bubble)!)
-                    self.delegate?.contactBubbleView(self, didDeleteBubbleWithTitle: bubble.titleLabel.text!)
+                    self?.contactBubbbles.remove(at: (self?.contactBubbbles.index(of: bubble)!)!)
+                    self?.delegate?.contactBubbleView(self!, didDeleteBubbleWithTitle: bubble.titleLabel.text!)
                 }
                 
                 self.setupContactBubble(contactBubble, atIndex: index, offsetX: &scrollViewOriginX, offsetY: &scrollViewOriginY, remainingWidth: &remainingWidth)
@@ -193,11 +195,11 @@ public class SVContactBubbleView: UIView
         // Update scroll view content size
         if self.contactBubbbles.count > 0
         {
-            self.scrollView.contentSize = CGSizeMake(self.scrollView.bounds.width, scrollViewOriginY + contactBubbleHeight + self.contactBubbleInsets.bottom)
+            self.scrollView.contentSize = CGSize(width: self.scrollView.bounds.width, height: scrollViewOriginY + contactBubbleHeight + self.contactBubbleInsets.bottom)
         }
         else
         {
-            self.scrollView.contentSize = CGSizeMake(self.scrollView.bounds.width, scrollViewOriginY + self.textFieldHeight + self.contactBubbleInsets.bottom)
+            self.scrollView.contentSize = CGSize(width: self.scrollView.bounds.width, height: scrollViewOriginY + self.textFieldHeight + self.contactBubbleInsets.bottom)
         }
         
         self.scrollToBottom(animated: false)
@@ -225,7 +227,7 @@ public class SVContactBubbleView: UIView
     
     
     // Sets up new contact bubble.
-    func setupContactBubble(contactBubble: SVContactBubble, atIndex index:Int, inout offsetX x: CGFloat, inout offsetY y: CGFloat, inout remainingWidth width: CGFloat)
+    func setupContactBubble(_ contactBubble: SVContactBubble, atIndex index:Int, offsetX x: inout CGFloat, offsetY y: inout CGFloat, remainingWidth width: inout CGFloat)
     {
         
         // contact bubble added to collection
@@ -240,7 +242,7 @@ public class SVContactBubbleView: UIView
             y += contactBubble.frame.height + self.contactBubbleInsets.top
         }
         
-        contactBubble.frame = CGRectMake(x + self.contactBubbleInsets.left, y, min(contactBubble.bounds.width, self.scrollView.bounds.width - x - self.contactBubbleInsets.left - self.contactBubbleInsets.right), contactBubble.bounds.height)
+        contactBubble.frame = CGRect(x: x + self.contactBubbleInsets.left, y: y, width: min(contactBubble.bounds.width, self.scrollView.bounds.width - x - self.contactBubbleInsets.left - self.contactBubbleInsets.right), height: contactBubble.bounds.height)
         
         self.scrollView.addSubview(contactBubble)
         
@@ -250,7 +252,7 @@ public class SVContactBubbleView: UIView
         
     }
     
-    func updatePlaceholderText(string: String) {
+    func updatePlaceholderText(_ string: String) {
         
         if (string.length == 0) {
             
@@ -264,7 +266,7 @@ public class SVContactBubbleView: UIView
     }
     
     
-    func setupTextField(inout offsetX x: CGFloat, inout offsetY y: CGFloat, inout remainingWidth width: CGFloat)
+    func setupTextField(offsetX x: inout CGFloat, offsetY y: inout CGFloat, remainingWidth width: inout CGFloat)
     {
         self.textfield.becomeFirstResponder()
         
@@ -273,9 +275,9 @@ public class SVContactBubbleView: UIView
         if width >= self.textFieldMinimumWidth
         {
             // Adding textfield in same line with contact bubble
-            self.placeholderLabel.frame = CGRectMake(x + 2 * self.contactBubbleInsets.left, y - 2, width - self.contactBubbleInsets.left - 2 * self.contactBubbleInsets.right, self.textFieldHeight)
+            self.placeholderLabel.frame = CGRect(x: x + 2 * self.contactBubbleInsets.left, y: y - 2, width: width - self.contactBubbleInsets.left - 2 * self.contactBubbleInsets.right, height: self.textFieldHeight)
             
-            self.textfield.frame = CGRectMake(x + self.contactBubbleInsets.left, y, width - self.contactBubbleInsets.left - self.contactBubbleInsets.right, self.textFieldHeight)
+            self.textfield.frame = CGRect(x: x + self.contactBubbleInsets.left, y: y, width: width - self.contactBubbleInsets.left - self.contactBubbleInsets.right, height: self.textFieldHeight)
             width = self.scrollView.bounds.width - x - self.textfield.frame.width
         }
         else
@@ -286,9 +288,9 @@ public class SVContactBubbleView: UIView
             x = self.contactBubbleInsets.left
             y += self.contactBubbleHeight + self.contactBubbleInsets.top
             
-            self.placeholderLabel.frame = CGRectMake(x + 2 * self.contactBubbleInsets.left, y - 2, width - self.contactBubbleInsets.left - 2 * self.contactBubbleInsets.right, self.textFieldHeight)
+            self.placeholderLabel.frame = CGRect(x: x + 2 * self.contactBubbleInsets.left, y: y - 2, width: width - self.contactBubbleInsets.left - 2 * self.contactBubbleInsets.right, height: self.textFieldHeight)
             
-            self.textfield.frame = CGRectMake(x + self.contactBubbleInsets.left, y, width - self.contactBubbleInsets.left - self.contactBubbleInsets.right, self.textFieldHeight)
+            self.textfield.frame = CGRect(x: x + self.contactBubbleInsets.left, y: y, width: width - self.contactBubbleInsets.left - self.contactBubbleInsets.right, height: self.textFieldHeight)
         }
         
         self.scrollView.addSubview(self.placeholderLabel)
@@ -296,9 +298,9 @@ public class SVContactBubbleView: UIView
     }
     
     
-    private func scrollToBottom(animated animated: Bool)
+    fileprivate func scrollToBottom(animated: Bool)
     {
-        let bottomPoint = CGPointMake(0, self.scrollView.contentSize.height - self.scrollView.bounds.height)
+        let bottomPoint = CGPoint(x: 0, y: self.scrollView.contentSize.height - self.scrollView.bounds.height)
         self.scrollView.setContentOffset(bottomPoint, animated: animated)
     }
 

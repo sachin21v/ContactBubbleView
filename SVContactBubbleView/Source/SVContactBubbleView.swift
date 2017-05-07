@@ -16,8 +16,7 @@ let  deleteKey = ""
 let  doneKey = "\n"
 
 
-public protocol SVContactBubbleDataSource
-{
+public protocol SVContactBubbleDataSource {
 
     func insetsForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> UIEdgeInsets?
     func placeholderTextForContactBubbleView(_ contactBubbleView: SVContactBubbleView) -> String?
@@ -26,8 +25,7 @@ public protocol SVContactBubbleDataSource
 }
 
 
-public protocol SVContactBubbleDelegate
-{
+public protocol SVContactBubbleDelegate {
     func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didDeleteBubbleWithTitle title: String)
     func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didFinishBubbleWithText text: String)
     func contactBubbleView(_ contactBubbleView: SVContactBubbleView, didChangeText text: String)
@@ -36,11 +34,10 @@ public protocol SVContactBubbleDelegate
 
 // MARK: -UITextFieldDelegate
 
-extension SVContactBubbleView: UITextViewDelegate
-{
+extension SVContactBubbleView: UITextViewDelegate {
     
-    public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool
-    {
+    public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        
         if text == doneKey {
             
             self.delegate?.contactBubbleView(self, didFinishBubbleWithText:textfield.text!)
@@ -50,7 +47,7 @@ extension SVContactBubbleView: UITextViewDelegate
         if text == deleteKey && textView.text == deleteKey {
             
             if let bubble = self.selectedBubble {
-                
+                // If already selected then delete the bubble
                 bubble.removeFromSuperview()
                 self.contactBubbbles.remove(at: self.contactBubbbles.index(of: bubble)!)
                 self.delegate?.contactBubbleView(self, didDeleteBubbleWithTitle: bubble.titleLabel.text!)
@@ -58,26 +55,24 @@ extension SVContactBubbleView: UITextViewDelegate
             }
             else
             {
+                // Select last bubble if exist and not selected
                 self.selectedBubble = self.contactBubbbles.last
             }
             
             return false
             
         }
-        else if text == deleteKey {
-            
-            let string: String = textfield.text!
-            let truncatedString = string.substring(to: string.characters.index(before: string.endIndex))
-            self.updatePlaceholderText(truncatedString)
-            self.delegate?.contactBubbleView(self, didChangeText: truncatedString)
-            return true
-        }
-        
-        var string: String = textfield.text!
-        string.append(text)
-        self.updatePlaceholderText(string)
-        self.delegate?.contactBubbleView(self, didChangeText: string)
+    
         return true
+    }
+    
+    public func textViewDidChange(_ textView: UITextView) {
+        
+        if let inputString = textView.text {
+            self.updatePlaceholderText(inputString)
+            self.lastText = inputString
+            self.delegate?.contactBubbleView(self, didChangeText: inputString)
+        }
     }
 }
 
@@ -156,8 +151,7 @@ open class SVContactBubbleView: UIView
         self.resetContactBubbleView()
         
         // Update Insets from delegate
-        if let insets = dataSource?.insetsForContactBubbleView(self)
-        {
+        if let insets = dataSource?.insetsForContactBubbleView(self) {
             self.contactBubbleInsets = insets
         }
         
@@ -171,15 +165,21 @@ open class SVContactBubbleView: UIView
         
         
         // Add Contact Bubble
-        for index in 0..<numberOfContactBubble
-        {
-            if let contactBubble = dataSource?.contactBubbleView(self, viewForContactBubbleAtIndex: index) as? SVContactBubble
-            {
+        for index in 0..<numberOfContactBubble {
+            
+            if let contactBubble = dataSource?.contactBubbleView(self, viewForContactBubbleAtIndex: index) as? SVContactBubble {
+                contactBubble.layoutIfNeeded()
                 contactBubble.actionClosure = {[weak self](bubble: SVContactBubble) in
                     
                     bubble.removeFromSuperview()
-                    self?.contactBubbbles.remove(at: (self?.contactBubbbles.index(of: bubble)!)!)
-                    self?.delegate?.contactBubbleView(self!, didDeleteBubbleWithTitle: bubble.titleLabel.text!)
+                    if let cbView = self {
+                        
+                        if let index = cbView.contactBubbbles.index(of: bubble) {
+                            
+                            cbView.contactBubbbles.remove(at: index)
+                            cbView.delegate?.contactBubbleView(cbView, didDeleteBubbleWithTitle: bubble.titleLabel.text ?? "")
+                        }
+                    }
                 }
                 
                 self.setupContactBubble(contactBubble, atIndex: index, offsetX: &scrollViewOriginX, offsetY: &scrollViewOriginY, remainingWidth: &remainingWidth)
@@ -192,8 +192,7 @@ open class SVContactBubbleView: UIView
         
         
         // Update scroll view content size
-        if self.contactBubbbles.count > 0
-        {
+        if !self.contactBubbbles.isEmpty {
             self.scrollView.contentSize = CGSize(width: self.scrollView.bounds.width, height: scrollViewOriginY + contactBubbleHeight + self.contactBubbleInsets.bottom)
         }
         else
@@ -211,10 +210,9 @@ open class SVContactBubbleView: UIView
     }
     
     
-    func resetContactBubbleView()
-    {
-        for contactBubble in self.contactBubbbles
-        {
+    func resetContactBubbleView() {
+        
+        for contactBubble in self.contactBubbbles {
             contactBubble.removeFromSuperview()
         }
         
@@ -235,8 +233,7 @@ open class SVContactBubbleView: UIView
         contactBubble.tag = index
         
         // Check if token is out of view's bounds, move to new line if so (unless its first token, truncate it)
-        if width <= self.contactBubbleInsets.left + contactBubble.frame.width + self.contactBubbleInsets.right && self.contactBubbbles.count > 1
-        {
+        if width <= self.contactBubbleInsets.left + contactBubble.frame.width + self.contactBubbleInsets.right && self.contactBubbbles.count > 1 {
             x = self.contactBubbleInsets.left
             y += contactBubble.frame.height + self.contactBubbleInsets.top
         }
@@ -265,14 +262,14 @@ open class SVContactBubbleView: UIView
     }
     
     
-    func setupTextField(offsetX x: inout CGFloat, offsetY y: inout CGFloat, remainingWidth width: inout CGFloat)
-    {
+    func setupTextField(offsetX x: inout CGFloat, offsetY y: inout CGFloat, remainingWidth width: inout CGFloat) {
+        
         self.textfield.becomeFirstResponder()
         
         self.updatePlaceholderText(self.lastText)
        
-        if width >= self.textFieldMinimumWidth
-        {
+        if width >= self.textFieldMinimumWidth {
+            
             // Adding textfield in same line with contact bubble
             self.placeholderLabel.frame = CGRect(x: x + 2 * self.contactBubbleInsets.left, y: y - 2, width: width - self.contactBubbleInsets.left - 2 * self.contactBubbleInsets.right, height: self.textFieldHeight)
             
@@ -297,8 +294,7 @@ open class SVContactBubbleView: UIView
     }
     
     
-    fileprivate func scrollToBottom(animated: Bool)
-    {
+    fileprivate func scrollToBottom(animated: Bool) {
         let bottomPoint = CGPoint(x: 0, y: self.scrollView.contentSize.height - self.scrollView.bounds.height)
         self.scrollView.setContentOffset(bottomPoint, animated: animated)
     }

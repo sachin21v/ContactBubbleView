@@ -115,6 +115,7 @@ extension SVViewController: SVContactBubbleDelegate
         {
             selectedCityArray.remove(at: selectedCityArray.index(of: found)!)
             contactBubbleView.reloadData()
+            self.contentTableView.reloadData()
         }
         
     }
